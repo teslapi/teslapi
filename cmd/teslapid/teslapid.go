@@ -5,16 +5,14 @@ import (
 	"net/http"
 	"path/filepath"
 	"text/template"
-
-	"github.com/teslapi/teslapi/cmd/teslapid/api"
 )
 
 func main() {
+
 	fs := http.FileServer(http.Dir("assets"))
 	http.Handle("/assets/", http.StripPrefix("/assets/", fs))
 
 	http.HandleFunc("/", serveTemplate)
-	api.Routes()
 
 	log.Println("Listening...")
 	http.ListenAndServe(":3000", nil)
