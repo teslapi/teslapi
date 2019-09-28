@@ -4,16 +4,13 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 )
 
 // Login handles login requests to the API
 func Login() http.HandlerFunc {
-	// TODO remove these and place into db
-	email := "jason@mccallister.io"
-	password := "Password1!"
-
 	type loginRequest struct {
-		Email    string `json:"email"`
+		Username string `json:"username"`
 		Password string `json:"password"`
 	}
 
@@ -36,7 +33,7 @@ func Login() http.HandlerFunc {
 			return
 		}
 
-		if request.Email != email || request.Password != password {
+		if request.Username != os.Getenv("TESLAPI_USERNAME") || request.Password != os.Getenv("TESLAPI_PASSWORD") {
 			w.WriteHeader(http.StatusBadRequest)
 			log.Println("invalid request")
 			return
