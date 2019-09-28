@@ -36,10 +36,12 @@ func TestLogin(t *testing.T) {
 		},
 	}
 	for _, tC := range testCases {
+		// Arrange
+		os.Setenv("TESLAPI_KEY", "somethingrandom")
+		os.Setenv("TESLAPI_USERNAME", tC.username)
+		os.Setenv("TESLAPI_PASSWORD", tC.password)
+
 		t.Run(tC.desc, func(t *testing.T) {
-			os.Setenv("TESLAPI_KEY", "somethingrandom")
-			os.Setenv("TESLAPI_USERNAME", tC.username)
-			os.Setenv("TESLAPI_PASSWORD", tC.password)
 			jsonRequest := strings.NewReader(fmt.Sprintf(tC.request, tC.username, tC.password))
 			req, err := http.NewRequest(tC.method, "login", jsonRequest)
 			if err != nil {
