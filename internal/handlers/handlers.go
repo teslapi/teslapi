@@ -5,6 +5,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 // Login handles login requests to the API
@@ -39,7 +42,20 @@ func Login() http.HandlerFunc {
 			return
 		}
 
-		response := loginResponse{Token: "1234.56789.0987654321"}
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
+			ExpiresAt: time.Now().Local().Add(time.Minute * 30).Unix(),
+			IssuedAt:  time.Now().Local().Unix(),
+			Issuer:    "teslapi",
+		})
+
+		// Sign and get the complete encoded token as a string using the secret
+		tokenString, err := token.SignedString([]byte(os.Getenv("TESLAPI_KEY")))
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+
+		response := loginResponse{Token: tokenString}
 		body, err := json.Marshal(&response)
 		if err != nil {
 			log.Fatal(err.Error())

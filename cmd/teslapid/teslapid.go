@@ -11,7 +11,7 @@ import (
 func main() {
 	srv := server.New(http.DefaultServeMux, nil)
 
-	http.HandleFunc("/login", handlers.Login())
+	http.HandleFunc("/api/login", handlers.Login())
 
 	if err := srv.ListenAndServe(":8080"); err != nil {
 		log.Fatalf("%v", err)
