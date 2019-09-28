@@ -3,30 +3,22 @@ package main
 import (
 	"log"
 	"net/http"
-	"path/filepath"
-	"text/template"
+
+	"gocloud.dev/server"
 )
 
 func main() {
+	srv := server.New(http.DefaultServeMux, nil)
 
-	fs := http.FileServer(http.Dir("assets"))
-	http.Handle("/assets/", http.StripPrefix("/assets/", fs))
+	routes()
 
-	http.HandleFunc("/", serveTemplate)
-
-	log.Println("Listening...")
-	http.ListenAndServe(":3000", nil)
+	if err := srv.ListenAndServe(":8080"); err != nil {
+		log.Fatalf("%v", err)
+	}
 }
 
-func serveTemplate(w http.ResponseWriter, r *http.Request) {
-	t := r.URL.Path
-	if t == "/" {
-		t = "index.html"
-	}
+func routes() {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
-	lp := filepath.Join("templates", "layout.html")
-	fp := filepath.Join("templates", filepath.Clean(t))
-
-	tmpl, _ := template.ParseFiles(lp, fp)
-	tmpl.ExecuteTemplate(w, "layout", nil)
+	})
 }
