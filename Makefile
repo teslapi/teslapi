@@ -1,5 +1,5 @@
 build:
-	cd cmd/teslapid/ && go build -o teslapid .
+	cd cmd/teslapid/ && go build -o ../../teslapid .
 uploader:
 	go run cmd/teslapid/teslapid.go
 teslapid:

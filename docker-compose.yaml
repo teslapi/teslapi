@@ -1,0 +1,14 @@
+version: '3.3'
+services:
+  teslapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      TESLAPI_KEY: vE7U7d5aUKXrd2nGCgE
+      TESLAPI_USERNAME: teslapi
+      TESLAPI_PASSWORD: 2jJm!ohvh#So
+      TESLAPI_PORT: 8080
+      TESLAPI_STORAGE_PATH:
+    ports:
+      - 8080:8080
