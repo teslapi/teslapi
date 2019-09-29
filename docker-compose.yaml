@@ -9,7 +9,7 @@ services:
       TESLAPI_USERNAME: teslapi
       TESLAPI_PASSWORD: 2jJm!ohvh#So
       TESLAPI_PORT: 8080
-      TESLAPI_STORAGE_PATH:
+      TESLAPI_STORAGE_PATH: /go/src/github.com/teslapi/teslapi/storage/TeslaUSB
     ports:
       - 8080:8080
     volumes:

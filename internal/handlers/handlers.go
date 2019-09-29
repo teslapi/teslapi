@@ -120,7 +120,7 @@ func jsonError(w http.ResponseWriter, msg string, status int) {
 }
 
 func getRecordingType(r *http.Request) string {
-	path := "./storage/TeslaUSB"
+	path := os.Getenv("TESLAPI_STORAGE_PATH")
 
 	switch r.URL.Query().Get("type") {
 	case "recent":
