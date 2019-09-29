@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/teslapi/teslapi/internal/middleware"
 	"github.com/teslapi/teslapi/internal/scanner"
 )
 
@@ -80,6 +81,12 @@ func Recordings() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
+		err := middleware.Authorize(r)
+		if err != nil {
+			jsonError(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+
 		path := getDirectory(r)
 
 		response.Recordings = scanner.Scan(path)
@@ -94,6 +101,22 @@ func Recordings() http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		w.Write(body)
 	}
+}
+
+func jsonError(w http.ResponseWriter, msg string, status int) {
+	type errorResp struct {
+		Message string `json:"message"`
+		Status  int    `json:"status"`
+	}
+	resp := errorResp{
+		Message: msg,
+		Status:  status,
+	}
+
+	body, _ := json.Marshal(&resp)
+
+	w.WriteHeader(status)
+	w.Write(body)
 }
 
 func getDirectory(r *http.Request) string {
