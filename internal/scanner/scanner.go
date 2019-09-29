@@ -5,12 +5,14 @@ import (
 	"encoding/hex"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 // Recording represents a recording
 type Recording struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Timestamp time.Time `json:"timestamp"`
 }
 
 // Scan a directory and return all of the files
@@ -27,8 +29,9 @@ func Scan(path string) []Recording {
 
 		if info.IsDir() == false && info.Name() != ".DS_Store" {
 			files = append(files, Recording{
-				ID:   id,
-				Name: info.Name(),
+				ID:        id,
+				Name:      info.Name(),
+				Timestamp: info.ModTime(),
 			})
 		}
 
