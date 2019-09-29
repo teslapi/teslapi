@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/teslapi/teslapi/internal/scanner"
 )
 
 // Login handles login requests to the API
@@ -56,6 +57,31 @@ func Login() http.HandlerFunc {
 		}
 
 		response := loginResponse{Token: tokenString}
+		body, err := json.Marshal(&response)
+		if err != nil {
+			log.Fatal(err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(body)
+	}
+}
+
+// Recordings will get the contents of the TeslaUSB directory and return them as an API response
+func Recordings() http.HandlerFunc {
+	type recordingsResponse struct {
+		Recordings []scanner.Recording `json:"files"`
+	}
+
+	response := recordingsResponse{}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		response.Recordings = scanner.Scan("./storage/TeslaUSB")
+
 		body, err := json.Marshal(&response)
 		if err != nil {
 			log.Fatal(err.Error())
