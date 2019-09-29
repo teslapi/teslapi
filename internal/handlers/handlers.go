@@ -80,7 +80,9 @@ func Recordings() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
-		response.Recordings = scanner.Scan("./storage/TeslaUSB")
+		path := getDirectory(r)
+
+		response.Recordings = scanner.Scan(path)
 
 		body, err := json.Marshal(&response)
 		if err != nil {
@@ -92,4 +94,17 @@ func Recordings() http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		w.Write(body)
 	}
+}
+
+func getDirectory(r *http.Request) string {
+	path := "./storage/TeslaUSB"
+
+	switch r.URL.Query().Get("type") {
+	case "recent":
+		return path + "/" + "RecentClips"
+	case "saved":
+		return path + "/" + "SavedClips"
+	}
+
+	return path
 }
