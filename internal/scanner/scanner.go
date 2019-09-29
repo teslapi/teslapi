@@ -31,7 +31,7 @@ func Scan(path string) []Recording {
 		hash := md5.Sum([]byte(info.Name()))
 		id := hex.EncodeToString(hash[:])
 
-		// determine which camera this is for
+		// determine the camera from the recording filename
 		camera := parse.CameraFromRecording(info.Name())
 
 		if info.IsDir() == false && info.Name() != ".DS_Store" {
