@@ -87,7 +87,7 @@ func Recordings() http.HandlerFunc {
 			return
 		}
 
-		path := getDirectory(r)
+		path := getRecordingType(r)
 
 		response.Recordings = scanner.Scan(path)
 
@@ -119,7 +119,7 @@ func jsonError(w http.ResponseWriter, msg string, status int) {
 	w.Write(body)
 }
 
-func getDirectory(r *http.Request) string {
+func getRecordingType(r *http.Request) string {
 	path := "./storage/TeslaUSB"
 
 	switch r.URL.Query().Get("type") {
