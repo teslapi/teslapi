@@ -14,3 +14,11 @@ services:
       - 8080:8080
     volumes:
       - ./storage/:/go/src/github.com/teslapi/teslapi/storage
+  minio:
+    image: minio/minio
+    environment:
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: minio123
+    ports:
+      - 9001:9000
+    command: ["server", "/data"]
