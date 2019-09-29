@@ -12,3 +12,5 @@ services:
       TESLAPI_STORAGE_PATH:
     ports:
       - 8080:8080
+    volumes:
+      - ./storage/:/go/src/github.com/teslapi/teslapi/storage
