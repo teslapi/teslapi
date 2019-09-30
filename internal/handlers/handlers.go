@@ -73,7 +73,7 @@ func Login() http.HandlerFunc {
 // Recordings will get the contents of the TeslaUSB directory and return them as an API response
 func Recordings() http.HandlerFunc {
 	type recordingsResponse struct {
-		Recordings []scanner.Recording `json:"files"`
+		Recordings []scanner.Recording `json:"recordings"`
 	}
 
 	response := recordingsResponse{}
@@ -93,7 +93,7 @@ func Recordings() http.HandlerFunc {
 
 		body, err := json.Marshal(&response)
 		if err != nil {
-			log.Fatal(err.Error())
+			log.Println(err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
