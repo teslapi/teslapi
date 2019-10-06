@@ -7,10 +7,18 @@ import (
 	"os"
 	"time"
 
+	"github.com/dgraph-io/badger"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/teslapi/teslapi/internal/middleware"
 	"github.com/teslapi/teslapi/internal/scanner"
 )
+
+// UI is the web version of the
+func UI(db *badger.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+	}
+}
 
 // Login handles login requests to the API
 func Login() http.HandlerFunc {
@@ -90,6 +98,13 @@ func Recordings() http.HandlerFunc {
 		path := getRecordingType(r)
 
 		response.Recordings = scanner.Scan(path)
+
+		if r.URL.Query().Get("scan") == "true" {
+			for _, r := range response.Recordings {
+				log.Println(r)
+				// recordings.Save(r)
+			}
+		}
 
 		body, err := json.Marshal(&response)
 		if err != nil {

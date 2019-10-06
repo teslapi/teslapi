@@ -1,5 +1,7 @@
 build:
 	cd cmd/teslapid/ && go build -o ../../teslapid .
+docker-logs:
+	docker-compose logs -f teslapi
 uploader:
 	go run cmd/teslapid/teslapid.go
 teslapid:
