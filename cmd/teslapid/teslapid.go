@@ -52,12 +52,12 @@ func main() {
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		data := ClipsPageData{
+		tmpl := template.Must(template.ParseFiles("templates/index.html"))
+
+		tmpl.Execute(w, ClipsPageData{
 			Title: "Clips",
 			Clips: clips,
-		}
-		tmpl := template.Must(template.ParseFiles("templates/index.html"))
-		tmpl.Execute(w, data)
+		})
 	})
 
 	if err := http.ListenAndServe(":3000", nil); err != nil {
