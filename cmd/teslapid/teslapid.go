@@ -11,15 +11,35 @@ import (
 	"github.com/teslapi/teslapi/internal/recordings"
 )
 
-type ClipsPageData struct {
+type clipsPageData struct {
 	Title string
 	Clips []recordings.Clip
 }
 
 func main() {
 	// scan the directory for clips
+	clips, err := scan("./storage/TeslaUSB")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		tmpl := template.Must(template.ParseFiles("templates/index.html"))
+
+		tmpl.Execute(w, clipsPageData{
+			Title: "Clips",
+			Clips: clips,
+		})
+	})
+
+	if err := http.ListenAndServe(":3000", nil); err != nil {
+		log.Fatalf("%v", err)
+	}
+}
+
+func scan(dir string) ([]recordings.Clip, error) {
 	clips := []recordings.Clip{}
-	err := filepath.Walk("./storage/TeslaUSB", func(root string, info os.FileInfo, err error) error {
+	err := filepath.Walk(dir, func(root string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -31,28 +51,31 @@ func main() {
 				clipType = "recent"
 			}
 
+			// get the camera that recorded the clip
+			camera := "front"
+			if regexp.MustCompile(`right_repeater`).MatchString(info.Name()) {
+				camera = "right"
+			}
+			if regexp.MustCompile(`left_repeater`).MatchString(info.Name()) {
+				camera = "left"
+			}
+
 			clips = append(clips, recordings.Clip{
-				Name: info.Name(),
-				Type: clipType,
+				Name:          info.Name(),
+				Type:          clipType,
+				Camera:        camera,
+				FileLocation:  root,
+				FileTimestamp: info.ModTime(),
+				Uploaded:      false,
 			})
 		}
 
 		return nil
 	})
+
 	if err != nil {
-		log.Fatal(err)
+		return clips, err
 	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		tmpl := template.Must(template.ParseFiles("templates/index.html"))
-
-		tmpl.Execute(w, ClipsPageData{
-			Title: "Clips",
-			Clips: clips,
-		})
-	})
-
-	if err := http.ListenAndServe(":3000", nil); err != nil {
-		log.Fatalf("%v", err)
-	}
+	return clips, err
 }
