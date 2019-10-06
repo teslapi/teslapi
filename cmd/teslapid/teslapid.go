@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/teslapi/teslapi/internal/recordings"
 )
@@ -24,8 +25,15 @@ func main() {
 		}
 
 		if info.IsDir() == false && info.Name() != ".DS_Store" {
+			// determine the type
+			clipType := "saved"
+			if regexp.MustCompile(`RecentClips`).MatchString(root) {
+				clipType = "recent"
+			}
+
 			clips = append(clips, recordings.Clip{
 				Name: info.Name(),
+				Type: clipType,
 			})
 		}
 
