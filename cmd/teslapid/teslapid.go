@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"html/template"
 	"log"
 	"net/http"
@@ -8,8 +9,15 @@ import (
 	"path/filepath"
 	"regexp"
 
+	badger "github.com/dgraph-io/badger"
 	"github.com/teslapi/teslapi/internal/recordings"
 )
+
+type config struct {
+	StorageDir string
+	DBDir      string
+	DB         *badger.DB
+}
 
 type clipsPageData struct {
 	Title string
@@ -17,8 +25,21 @@ type clipsPageData struct {
 }
 
 func main() {
+	config := config{
+		StorageDir: "./storage/TeslaUSB",
+		DBDir:      "./storage/db",
+	}
+
+	db, err := badger.Open(badger.DefaultOptions(config.DBDir))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	config.DB = db
+
 	// scan the directory for clips
-	clips, err := scan("./storage/TeslaUSB")
+	clips, err := scan(config)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -32,14 +53,80 @@ func main() {
 		})
 	})
 
+	http.HandleFunc("/api/recordings", func(w http.ResponseWriter, r *http.Request) {
+		params := r.URL.Query()
+
+		clips := []recordings.Clip{}
+		db.View(func(txn *badger.Txn) error {
+			opts := badger.DefaultIteratorOptions
+			opts.PrefetchSize = 10
+			it := txn.NewIterator(opts)
+			defer it.Close()
+			for it.Rewind(); it.Valid(); it.Next() {
+				item := it.Item()
+				k := item.Key()
+				err := item.Value(func(v []byte) error {
+					c := recordings.Clip{
+						Name: string(k),
+					}
+					err := json.Unmarshal(v, &c)
+					if err != nil {
+						return err
+					}
+
+					// filter the params
+					if params.Get("type") != "" && params.Get("camera") != "" {
+						if params.Get("type") == c.Type && params.Get("camera") == c.Camera {
+							clips = append(clips, c)
+						}
+					}
+
+					if params.Get("type") != "" && params.Get("camera") == "" {
+						if params.Get("type") == c.Type {
+							clips = append(clips, c)
+						}
+					}
+
+					if params.Get("type") == "" && params.Get("camera") != "" {
+						if params.Get("camera") == c.Camera {
+							clips = append(clips, c)
+						}
+					}
+
+					if params.Get("type") == "" && params.Get("camera") != "" {
+						if params.Get("camera") == c.Camera {
+							clips = append(clips, c)
+						}
+					}
+
+					return nil
+				})
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		w.Header().Set("Content-Type", "application/json")
+		body, err := json.Marshal(&clips)
+		if err != nil {
+			log.Println(err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(body)
+	})
+
 	if err := http.ListenAndServe(":3000", nil); err != nil {
 		log.Fatalf("%v", err)
 	}
 }
 
-func scan(dir string) ([]recordings.Clip, error) {
+func scan(config config) ([]recordings.Clip, error) {
 	clips := []recordings.Clip{}
-	err := filepath.Walk(dir, func(root string, info os.FileInfo, err error) error {
+	err := filepath.Walk(config.StorageDir, func(root string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -59,15 +146,30 @@ func scan(dir string) ([]recordings.Clip, error) {
 			if regexp.MustCompile(`left_repeater`).MatchString(info.Name()) {
 				camera = "left"
 			}
-
-			clips = append(clips, recordings.Clip{
+			c := recordings.Clip{
 				Name:          info.Name(),
 				Type:          clipType,
 				Camera:        camera,
 				FileLocation:  root,
 				FileTimestamp: info.ModTime(),
 				Uploaded:      false,
+			}
+			err := config.DB.Update(func(txn *badger.Txn) error {
+				// TODO check for the object by id
+				encoded, err := json.Marshal(c)
+				if err != nil {
+					return err
+				}
+
+				txn.Set([]byte(c.Name), encoded)
+				return nil
 			})
+
+			if err != nil {
+				return err
+			}
+
+			clips = append(clips, c)
 		}
 
 		return nil
