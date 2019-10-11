@@ -12,6 +12,7 @@ import (
 
 	badger "github.com/dgraph-io/badger"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/teslapi/teslapi/internal/middleware"
 	"github.com/teslapi/teslapi/internal/recordings"
 )
 
@@ -55,7 +56,7 @@ func main() {
 		})
 	})
 
-	http.HandleFunc("api/login", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/login", func(w http.ResponseWriter, r *http.Request) {
 		type loginRequest struct {
 			Username string `json:"username"`
 			Password string `json:"password"`
@@ -111,7 +112,19 @@ func main() {
 	})
 
 	http.HandleFunc("/api/recordings", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		err := middleware.Authorize(r)
+		if err != nil {
+			jsonError(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+
 		params := r.URL.Query()
+
+		type apiResponse struct {
+			Data  []recordings.Clip `json:"data"`
+			Total int               `json:"total"`
+		}
 
 		clips := []recordings.Clip{}
 		db.View(func(txn *badger.Txn) error {
@@ -156,6 +169,10 @@ func main() {
 						}
 					}
 
+					if params.Get("type") == "" && params.Get("camera") == "" {
+						clips = append(clips, c)
+					}
+
 					return nil
 				})
 				if err != nil {
@@ -164,8 +181,13 @@ func main() {
 			}
 			return nil
 		})
-		w.Header().Set("Content-Type", "application/json")
-		body, err := json.Marshal(&clips)
+
+		apiR := apiResponse{
+			Data:  clips,
+			Total: len(clips),
+		}
+
+		body, err := json.Marshal(&apiR)
 		if err != nil {
 			log.Println(err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
@@ -237,4 +259,20 @@ func scan(config config) ([]recordings.Clip, error) {
 	}
 
 	return clips, err
+}
+
+func jsonError(w http.ResponseWriter, msg string, status int) {
+	type errorResp struct {
+		Message string `json:"message"`
+		Status  int    `json:"status"`
+	}
+	resp := errorResp{
+		Message: msg,
+		Status:  status,
+	}
+
+	body, _ := json.Marshal(&resp)
+
+	w.WriteHeader(status)
+	w.Write(body)
 }
