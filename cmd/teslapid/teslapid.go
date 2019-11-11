@@ -11,8 +11,8 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Name = "teslapid"
-	app.Usage = "program to manage automatic uploads to the cloud"
-	app.Version = "1.0.0"
+	app.Usage = "Program to manage automatic uploads from your Tesla Dashcam to the cloud"
+	app.Version = "0.0.1"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:   "storage-dir",
